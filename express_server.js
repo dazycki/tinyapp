@@ -28,8 +28,18 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
+
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+app.post("/urls", (req, res) => {
+  const tempVar = generateRandomString();
+  urlDatabase[tempVar] = req.body.longURL; // Save shortURL-longURL key-value pair to urlDatabase
+  res.redirect(`/urls/${tempVar}`);
 });
 
 app.get("/urls", (req, res) => {
@@ -37,18 +47,11 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
-});
-
-app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
-});
-
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
-console.log(generateRandomString());
+app.get("/u/:shortURL", (req, res) => {
+  res.redirect(urlDatabase[req.params.shortURL]);
+});
