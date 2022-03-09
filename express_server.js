@@ -13,7 +13,7 @@ const urlDatabase = {
 };
 
 function generateRandomString() {
-
+  return Math.random().toString(36).slice(2, 8);
 }
 
 app.get("/", (req, res) => {
@@ -50,3 +50,5 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
+
+console.log(generateRandomString());
