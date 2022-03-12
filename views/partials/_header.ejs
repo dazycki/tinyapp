@@ -8,16 +8,16 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <% if(user) { %>
-        <p>Logged In As: <%= user.email %>!</p>
-        <form method="POST" action="/logout">
-          <button type="submit">Logout</button>
-        </form>
-          <% } else { %>
-            <a href="/login"><button>Login</button></a>
-            <a href="/register"><button>Register</button></a>
-          <% } %>
       </div>
     </div>
+    <% if(user) { %>
+      <p style="margin-right: 10px; padding-top: 10px; color: white">Logged In As: <%= user.email %></p>
+      <form method="POST" action="/logout">
+        <button class="btn btn-outline-light" type="submit">Logout</button>
+      </form>
+        <% } else { %>
+          <a href="/login"><button class="btn btn-outline-light" style="margin-right: 10px">Login</button></a>
+          <a href="/register"><button class="btn btn-outline-light">Register</button></a>
+        <% } %>
   </nav>
 </header>
