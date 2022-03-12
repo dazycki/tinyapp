@@ -92,8 +92,13 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 });
 
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 app.post("/login", (req, res) => {
-  const username = req.body.username;
+  const email = req.body.email.trim();
+  const password = req.body.password.trim();
   // res.cookie('username', {username: username});
   res.redirect("/urls");
 });
