@@ -1,8 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session')
+const { getUserByEmail, generateRandomString, urlsForUser } = require('./helpers');
 
 const app = express();
 const PORT = 8080; // default port 8080
@@ -14,46 +14,11 @@ app.use(cookieSession({
   name: 'session',
   keys: ['userID']
 }));
+
 app.set('view engine', 'ejs');
 
-// app.use(cookieParser());
-
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW"
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW"
-  }
-};
-
+const urlDatabase = {};
 const users = {};
-
-const generateRandomString = function() {
-  return Math.random().toString(36).slice(2, 8);
-};
-
-const findUserByEmail = function(email) {
-  for (const id in users) {
-    const user = users[id];
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
-};
-
-const urlsForUser = function(userID, urlDatabase) {
-  let urls = {};
-  for (let shortURL of Object.keys(urlDatabase)) {
-    if (urlDatabase[shortURL].userID === userID) {
-      urls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return urls;
-};
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -199,7 +164,7 @@ app.post("/login", (req, res) => {
     res.render("errors", templateVars);
   }
 
-  const user = findUserByEmail(email);
+  const user = getUserByEmail(email, users);
 
   if (!user) { // CHECK IF USER EXSISTS IN DATABASE
     let templateVars = {
@@ -210,10 +175,17 @@ app.post("/login", (req, res) => {
     res.render("errors", templateVars);
   } 
   
-  if (bcrypt.compareSync(password, user.hashedPassword)) { // CHECK IF INPUT MATCHES PASSWORD IN DATABASE
-    req.session.userID = user.id;
-    res.redirect("/urls");
+  if (!bcrypt.compareSync(password, user.hashedPassword)) { // CHECK IF INPUT MATCHES PASSWORD IN DATABASE
+    let templateVars = {
+      copy: 'Error: invalid credentials!',
+      user: undefined
+    };
+    res.status(403);
+    res.render("errors", templateVars);
   }
+
+  req.session.userID = user.id;
+  res.redirect("/urls");
 });
 
 // END POINT TO LOGOUT USER AND CLEAR USERID COOKIE
@@ -246,7 +218,7 @@ app.post("/register", (req, res) => {
     res.render("errors", templateVars);
   }
 
-  const user = findUserByEmail(email);
+  const user = getUserByEmail(email, users);
   
   if (user) { //CHECK IF USER ALREADY EXSISTS IN DATABASE
     let templateVars = {
