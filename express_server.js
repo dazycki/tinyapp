@@ -4,17 +4,16 @@ const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session')
 const { getUserByEmail, generateRandomString, urlsForUser } = require('./helpers');
 
-const app = express();
+const app = express(); // creates app as an object
 const PORT = 8080; // default port 8080
 
+// SERVER CONFIGURATION
 app.set("view engine", "ejs");
-
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
   keys: ['userID']
 }));
-
 app.set('view engine', 'ejs');
 
 const urlDatabase = {};
@@ -24,7 +23,9 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-/* CLEANED UP FUNCTIONS!!!! */
+app.get("/", (req, res) => {
+  res.redirect("/login");
+});
 
 // END POINT TO SERVER CREATE A NEW TINY URL PAGE
 app.get("/urls/new", (req, res) => {
