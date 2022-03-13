@@ -1,6 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcryptjs');
+
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -21,16 +23,16 @@ const urlDatabase = {
 };
 
 const users = {
-  "aJ48lW": {
-    id: "aJ48lW",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
+  // "aJ48lW": {
+  //   id: "aJ48lW",
+  //   email: "user@example.com",
+  //   password: "purple-monkey-dinosaur"
+  // },
+  // "user2RandomID": {
+  //   id: "user2RandomID",
+  //   email: "user2@example.com",
+  //   password: "dishwasher-funk"
+  // }
 };
 
 const generateRandomString = function() {
@@ -97,14 +99,14 @@ app.get("/urls", (req, res) => {
     const templateVars = {
       user: users[req.cookies.user_id.id],
       urls: urlsForUser(req.cookies.user_id.id, urlDatabase) // FETCH USER'S URLS
-    }
+    };
     res.render("urls_index", templateVars);
   } else {
     res.redirect("/login");
   }
 });
 
-// END POINT TO LOAD SPECIFIC URL'S PAGE 
+// END POINT TO LOAD SPECIFIC URL'S PAGE
 app.get("/urls/:shortURL", (req, res) => {
   if (req.cookies.user_id) { // CHECK IF USER IS SIGNED IN
     if (!urlDatabase[req.params.shortURL]) { // CHECK IF TINY URL IS IN DATABASE
@@ -117,21 +119,21 @@ app.get("/urls/:shortURL", (req, res) => {
     } else if (req.cookies.user_id.id === urlDatabase[req.params.shortURL].userID) { // CHECK IF URL BELONGS TO USER
       const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id.id] };
       res.render("urls_show", templateVars);
-    } 
+    }
   } else {
-    res.redirect("/login")
+    res.redirect("/login");
   }
 });
 
 // END POINT TO REDIRECT USER FROM TINY URL TO ACTUAL URL
-app.get("/u/:shortURL", (req, res) => {  
+app.get("/u/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL]) { // CHECK IF TINY URL IS IN DATABASE
     const templateVars = {
       copy: 'Error: this link does not exsist!',
     };
     if (req.cookies.user_id) { // PASS THROUGH USER ID IF SIGNED IN
       templateVars.user = users[req.cookies.user_id.id];
-    } 
+    }
     res.status(404);
     res.render("errors", templateVars);
   } else {
@@ -144,7 +146,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   if (!req.cookies.user_id) { // CHECK IF USER IS SIGNED
     res.redirect("/login");
-  } else if (req.cookies.user_id.id !== urlDatabase[req.params.shortURL].userID) {  // CONDITION IF URL DOES NOT BELONG TO USER 
+  } else if (req.cookies.user_id.id !== urlDatabase[req.params.shortURL].userID) {  // CONDITION IF URL DOES NOT BELONG TO USER
     let templateVars = {
       copy: 'Error: you do not have permission to perform this action!',
       user: req.cookies.user_id.id
@@ -157,11 +159,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
-// END POINT TO UPDATE TINY URL 
+// END POINT TO UPDATE TINY URL
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   if (!req.cookies.user_id) { // CHECK IF USER IS LOGGED IN
-    res.redirect("/login")
+    res.redirect("/login");
   } else if (req.cookies.user_id.id === urlDatabase[shortURL].userID) { // CHECK IF URL BELONGS TO USER
     urlDatabase[shortURL].longURL = req.body.newURL;
     res.redirect("/urls");
@@ -202,17 +204,19 @@ app.post("/login", (req, res) => {
 
   const user = findUserByEmail(email);
 
-  if (!user || user.password !== password) { // CHECK IF INPUT MATCHES PASSWORD IN DATABASE
+  if (!user) { // CHECK IF USER EXSISTS IN DATABASE
     let templateVars = {
       copy: 'Error: invalid credentials!',
       user: undefined
     };
     res.status(403);
     res.render("errors", templateVars);
+  } 
+  
+  if (bcrypt.compareSync(password, user.hashedPassword)) { // CHECK IF INPUT MATCHES PASSWORD IN DATABASE
+    res.cookie("user_id", { id: user.id });
+    res.redirect("/urls");
   }
-
-  res.cookie("user_id", { id: user.id });
-  res.redirect("/urls");
 });
 
 // END POINT TO LOGOUT USER AND CLEAR USERID COOKIE
@@ -234,7 +238,8 @@ app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.email.trim();
   const password = req.body.password.trim();
-  
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
   if (!email || !password) { //CHECK IF EMAIL AND PASSWORD ARE FILLED IN
     let templateVars = {
       copy: 'Error: please enter a valid email and password!',
@@ -255,11 +260,13 @@ app.post("/register", (req, res) => {
     res.render("errors", templateVars);
   }
 
+  // CREATE NEW USER IF ABOVE CHECKS PASS
   users[id] = {
     id,
     email,
-    password
+    hashedPassword
   };
+  console.log(users);
   res.cookie('user_id', { id });
   res.redirect("/urls");
 });
