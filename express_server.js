@@ -47,7 +47,7 @@ const findUserByEmail = (email) => {
   return null;
 };
 
-const userURLS = function (userID, urlDatabase) {
+const urlsForUser = function (userID, urlDatabase) {
   let urls = {};
   for (let shortURL of Object.keys(urlDatabase)) {
     if (urlDatabase[shortURL].userID === userID) {
@@ -105,7 +105,7 @@ app.get("/urls", (req, res) => {
   
   if (req.cookies.user_id) {
     templateVars.user = users[req.cookies.user_id.id];
-    templateVars.urls = userURLS(req.cookies.user_id.id, urlDatabase);
+    templateVars.urls = urlsForUser(req.cookies.user_id.id, urlDatabase);
     console.log(templateVars);
     res.render("urls_index", templateVars);
   } else {
@@ -114,19 +114,25 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: false };
-  
-  if (req.cookies.user_id) {
-    templateVars.user = users[req.cookies.user_id.id];
-  }
-
-  res.render("urls_show", templateVars);
+  if (!urlDatabase[req.params.shortURL]) {
+    let templateVars = {
+      copy: 'Error: this link does not exsist!',
+      user: false
+    }
+    res.status(404);
+    res.render("errors", templateVars);
+  } else if (!req.cookies.user_id || req.cookies.user_id.id !== urlDatabase[req.params.shortURL].userID) {
+    res.redirect("/login");
+  } else {
+      const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies.user_id.id] };
+      res.render("urls_show", templateVars);
+    }
 });
 
 app.get("/u/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL]) {
     let templateVars = {
-      copy: 'Error this link does not exsist',
+      copy: 'Error: this link does not exsist!',
       user: false
     }
     res.status(404);
