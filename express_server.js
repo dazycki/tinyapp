@@ -81,9 +81,8 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   if (!req.cookies.user_id) {
     let templateVars = {
-      status: 401,
-      message: 'Please login in order to add a new URL',
-      user: users[req.cookies.user_id.id]
+      copy: 'Please login in to add a new URL',
+      user: false
     }
     res.status(401);
     res.render("errors", templateVars);
@@ -125,7 +124,16 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  res.redirect(urlDatabase[req.params.shortURL]);
+  if (!urlDatabase[req.params.shortURL]) {
+    let templateVars = {
+      copy: 'Error this link does not exsist',
+      user: false
+    }
+    res.status(404);
+    res.render("errors", templateVars);
+  } else {
+    res.redirect(urlDatabase[req.params.shortURL].longURL);
+  }
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
