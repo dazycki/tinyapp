@@ -24,5 +24,4 @@ const urlsForUser = function(userID, urlDatabase) {
   return urls;
 };
 
-
 module.exports = { getUserByEmail, generateRandomString, urlsForUser };
